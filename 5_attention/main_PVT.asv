@@ -1,0 +1,228 @@
+%%%%%%%%%% description %%%%%%%%%%%%%%
+% Created on Mon Aug 30 2022
+% Place  : NTT
+% Author : Yuta Suzuki
+
+% Place           :
+% Eye-tracker     : Eyelink
+% Display         :
+% Visual distance :  cm
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+clear all;
+close all;
+
+addpath(genpath('../toolBox'));
+
+cfg = [];
+cfg.LUMINANCE_BACKGROUND = 0;
+cfg.LUMINANCE_TEXT = ones(1,3)*50 / 255;
+
+init_main();
+
+cfg.TIME_PRESENTATION = 2;
+cfg.TIME_PRESENTATION_DARK = 0.5;
+
+cfg.NUM_SESSION = 3;
+cfg.TIME_FIXATION = 0.5;     % fixation time
+
+SCREEN_YELLOW = 1;
+SCREEN_BLUE = 0;
+
+%% initilize metamer ----------------------------------------------------
+
+f = dir(['../1_Brightness/results/' cfg.participantsInfo.name '/stealthPupil*.mat']);
+load([f(end).folder '/' f(end).name], 'param')
+
+metamer.flux(1,:) = metamer.control(1,:);
+metamer.flux = metamer.flux * mean([param.coeff.selected]);
+
+light_name = fieldnames(metamer);
+
+%% make frame
+
+cfg.GABOL_SIZE = round(pixel_size(cfg.DOT_PITCH, 10, cfg.VISUAL_DISTANCE));
+
+% res = [cfg.GABOL_SIZE cfg.GABOL_SIZE];
+
+% Define stimulus parameters
+lambda = 80;        % wavelength
+sigma = cfg.GABOL_SIZE / 8;          % standard deviation of Gaussian envelope
+contrast = 1;
+
+% Create x and y coordinates
+x = -cfg.GABOL_SIZE/2+1:cfg.GABOL_SIZE/2;
+y = -cfg.GABOL_SIZE/2+1:cfg.GABOL_SIZE/2;
+
+[X,Y] = meshgrid(x,y);
+
+% Compute Gabor function
+cosine = (cos(2*pi*X/lambda) + 1) /2;
+
+cosine = (cos(2*pi*X/lambda)) /2;
+cosine = abs(cosine);
+
+gaussian = exp(-(X.^2 + Y.^2)/(2*sigma^2));
+
+% make circle
+r = size(gaussian,1);
+gaussian = zeros(r,r);
+
+for i = 1:r
+    for j = 1:r
+        r1 = sqrt((r/2 - i)^2 + (r/2 - j)^2);
+        if r1 < r/2
+            gaussian(i,j) = 1;
+        end
+    end
+end
+
+gabor = contrast * cosine .* gaussian;
+% figure;imshow(gabor);
+% figure;imshow(cosine);
+% figure;imshow(gabor_dat);
+% figure;imshow(gaussian);
+
+% gabor_dat = zeros(cfg.GABOL_SIZE,cfg.GABOL_SIZE,4);
+% gabor_dat(:,:,4) = gabor;
+% 
+% gaborTexture = Screen('MakeTexture',windowPtr,gabor_dat);
+
+%%
+for angle = [0 90]
+    for lightName = light_name'
+        for iProj = 1:2
+
+            tmp_col = metamer.(lightName{1});
+
+            tmp_col = metamer.(light_name{1});
+            gabor_dat = zeros(cfg.GABOL_SIZE,cfg.GABOL_SIZE,3);
+
+            wave = (cos(2*pi*X/lambda));
+            for rgb = 1:3
+                gabor_dat(:,wave(1,:) < 0,rgb) = tmp_col((iProj-1)*3+rgb)./255;
+            end
+       
+            tmp_col = metamer.(light_name{2});
+            
+            for rgb = 1:3
+                gabor_dat(:,wave(1,:) > 0,rgb) = tmp_col((iProj-1)*3+rgb)./255;
+            end
+            gabor_dat = movmean(gabor_dat,20,2);
+
+%             gabor_dat = contrast * gabor_dat .* gaussian;
+            gabor_dat(:,:,4) = gaussian;
+
+            gaborTexture = Screen('MakeTexture',windowPtr,gabor_dat);
+
+            Screen('CopyWindow', empty, windowPtr);
+
+%             Screen('FillRect', windowPtr, tmp_col((iProj-1)*3+1:(iProj-1)*3+3)./255, rect);
+            Screen('FillRect', windowPtr, [0,0,0], rect);
+
+            [window_light.(lightName{1}).(['proj' num2str(iProj)]),screenRect] = Screen('OpenOffscreenWindow', scrnNum, cfg.LUMINANCE_BACKGROUND,[],[],32);
+
+            Screen('CopyWindow',windowPtr, window_light.(lightName{1}).(['proj' num2str(iProj)]));
+
+
+            Screen('DrawTexture', windowPtr, gaborTexture,[], ...
+                [centerX-(cfg.GABOL_SIZE/2), centerY-(cfg.GABOL_SIZE/2), ...
+                centerX+(cfg.GABOL_SIZE/2), centerY+(cfg.GABOL_SIZE/2)],angle);
+
+            [window_light.(lightName{1}).(['deg' num2str(angle)]).(['proj' num2str(iProj)]),screenRect] = Screen('OpenOffscreenWindow', scrnNum, cfg.LUMINANCE_BACKGROUND,[],[],32);
+
+            Screen('CopyWindow',windowPtr, window_light.(lightName{1}).(['deg' num2str(angle)]).(['proj' num2str(iProj)]));
+
+        end
+    end
+end
+
+%% condition frame ----------------------------------------------------
+
+cfg.NUM_LIGHT = size(light_name,1);
+
+cfg.condition_frame.light = allcomb(1:cfg.NUM_LIGHT);
+cfg.condition_frame.light = cfg.condition_frame.light(randperm(size(cfg.condition_frame.light,1)));
+
+
+cfg.NUM_TRIAL = 50;
+
+cfg.TASK_JITTER = [2 6];
+
+while 1
+    tmp = (cfg.TASK_JITTER(2)-cfg.TASK_JITTER(1)).*rand(cfg.NUM_TRIAL,1) + cfg.TASK_JITTER(1);
+    if abs(mean(cfg.TASK_JITTER) - mean(tmp)) < 0.001
+        break;
+    end
+end
+
+cfg.condition_frame.time = tmp;
+
+
+%% dark adaptation
+
+cfg.res_summary = [];
+
+count = [];
+count.run = 1;
+
+for iLight = [cfg.condition_frame.light; flipud(cfg.condition_frame.light)]'
+
+    cfg.res_summary.(['Run' num2str(count.run)]).RT = [];
+    
+    count.trial = 1;
+
+    showLight();
+
+    for iTime = cfg.condition_frame.time'
+
+        fixation();
+        presentation_PVT();
+
+        count.trial = count.trial + 1;
+
+    end
+
+    if runCount == length(cfg.condition_frame.light)
+
+        if useEyelink
+            Eyelink('Message', 'End_Experiment');
+        end
+
+        save_name = ['/stealthPupilPVT_',cfg.participantsInfo.name,'_',today_date];
+        saveFiles();
+
+        if useEyelink
+            Eyelink('Message', 'Start_Experiment');
+            eyelinkInit();
+        end
+        ShowMessage();
+    end
+
+    count.run = count.run + 1;
+
+    clear keyCode;
+    [keyIsDown,secs,keyCode] = KbCheck;
+    if (keyCode(cfg.key.KEY_ESCAPE))  % interrupt by ESC
+        PsychPortAudio('Stop',pahandle);
+        Screen('CloseAll');
+        Screen('ClearAll');
+        ListenChar(0);
+        sca;
+        return
+    end
+
+end
+
+
+if useEyelink
+    Eyelink('Message', 'End_Experiment');
+end
+
+fprintf('********* Finish **********\n')
+
+sca;
+ListenChar(0);
+
+save_name = ['/stealthPupilPVT_',cfg.participantsInfo.name,'_',today_date];
+saveFiles();
