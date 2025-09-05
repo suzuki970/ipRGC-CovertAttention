@@ -193,7 +193,6 @@ def main():
         el_tracker.sendMessage("START_EXPERIMENT")
 
     # %% main expriment
-
     with open(glob.glob(f"results/{args.subject}/0_stimTest/config*.json")[0], "r") as f:
         params = json.load(f)
     

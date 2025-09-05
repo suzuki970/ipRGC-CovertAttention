@@ -17,7 +17,7 @@ from pixel_size import pixel_size
 display = canvas.Display()
 
 SCREEN_RANGE = 1
-SCREEN_RANGE = 0.5
+# SCREEN_RANGE = 0.5
 
 # %% stimulus
 
@@ -26,14 +26,14 @@ SCREEN_RANGE = 0.5
 # white = ""
 
 FULL_SCREEN = True
-FULL_SCREEN = False
+# FULL_SCREEN = False
 
 # SCREEN_NUM_YELLOW = 2
 # SCREEN_NUM_BLUE = 1
 # SCREEN_NUM_GUI = 0
 
-SCREEN_NUM_YELLOW = 0
-SCREEN_NUM_BLUE = 1
+SCREEN_NUM_YELLOW = 1
+SCREEN_NUM_BLUE = 2
 
 FONTSIZE_MSG = 120 #pix
 

@@ -12,7 +12,6 @@ import cv2
 from psychopy import visual, event, core
 import config
 
-
 def generate_grid_points(width, height, margin=100):
     
     points = []

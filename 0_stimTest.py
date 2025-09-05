@@ -57,6 +57,9 @@ def analyzeData(df,args):
     plt.ylabel("y")
     plt.title(f"Selected light is {int(I+1)}")
 
+    plt.figure(figsize=(8, 6))
+    plt.scatter(x, y, alpha=0.5, edgecolors="w")
+
     for i in range(len(data["Yxy"])):
         plt.text(x[i], y[i], str(i+1), fontsize=8, ha="center", va="center")
     
@@ -129,8 +132,8 @@ def draw_fixation(wins,params):
     trialClock.reset() 
     
     while True:
-        # if 0.5 <= trialClock.getTime():
-        if 0.01 <= trialClock.getTime():
+        if 0.5 <= trialClock.getTime():
+        # if 0.01 <= trialClock.getTime():
             break
 
 def draw_stim(wins,light):
@@ -153,7 +156,7 @@ def draw_stim(wins,light):
     trialClock.reset() 
     while True:
         # if 1 <= trialClock.getTime():
-        if 0.01 <= trialClock.getTime():
+        if 5 <= trialClock.getTime():
             break
   
 def draw_text(wins,msg):

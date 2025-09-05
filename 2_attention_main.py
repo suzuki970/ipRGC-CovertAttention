@@ -17,7 +17,7 @@ import time
 import shutil
 import subprocess
 from itertools import product
-
+import glob
 import lib.config as config
 from lib.EyeLinkCoreGraphicsPsychoPy import EyeLinkCoreGraphicsPsychoPy
 
@@ -144,12 +144,15 @@ def draw_background(win,params,iProj):
     tmp = np.ones((h, w, 3))
     
     if params["window"] == "ipRGC+|ipRGC-":
-        left_rgb  = config.lightData["ipRGC"][iProj]   / 255.0
-        right_rgb = config.lightData["control"][iProj] / 255.0
+        left_rgb  = np.array(config.lightData["ipRGC"][iProj])   / 255
+        right_rgb = np.array(config.lightData["control"][iProj]) / 255
     else:
-        left_rgb  = config.lightData["control"][iProj] / 255.0
-        right_rgb = config.lightData["ipRGC"][iProj]   / 255.0
+        left_rgb  = np.array(config.lightData["control"][iProj]) / 255
+        right_rgb = np.array(config.lightData["ipRGC"][iProj])   / 255
 
+    print(left_rgb)
+    print(right_rgb)
+    
     mid = w // 2
     tmp[:,:mid,:] = left_rgb
     tmp[:,mid:,:] = right_rgb
@@ -377,7 +380,13 @@ def main():
         el_tracker.sendMessage("START_EXPERIMENT")
     
     # %% main expriment
-
+    
+    with open(glob.glob(f"results/{args.subject}/0_stimTest/config*.json")[0], "r") as f:
+        params = json.load(f)
+    
+    config.lightData["control"] = config.lightData["control"][params["selectedLight"]]
+    
+    
     behavior_res=[]
     for iTrial in np.arange(len(condition_frame)):
         
