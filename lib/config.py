@@ -73,13 +73,19 @@ lightData = {
 
 with open("source/light_20250121.json", "r") as f:
     tmp_lightData = json.load(f)
-    
 
-for i in np.arange(len(tmp_lightData)):
-    lightData["control"][i]={
-        SCREEN_NUM_BLUE:tmp_lightData[i][:3],
-        SCREEN_NUM_YELLOW:tmp_lightData[i][3:],
+lightData={
+    "ipRGC":{},
+    "control":{}
     }
+
+for mm in ["left","right"]:
+    with open(glob.glob(f"source/{mm}*ipRGC*")[0], "r") as f:
+        tmp_lightData = json.load(f)
+        lightData["ipRGC"][mm]={
+            SCREEN_NUM_BLUE:tmp_lightData[str(SCREEN_NUM_BLUE)],
+            SCREEN_NUM_YELLOW:tmp_lightData[str(SCREEN_NUM_YELLOW)],
+        }
 
 # with open(glob.glob("LEDcubeSimulation/data*.json")[0], "r") as f:
 #     res = json.load(f)

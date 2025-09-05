@@ -144,15 +144,12 @@ def draw_background(win,params,iProj):
     tmp = np.ones((h, w, 3))
     
     if params["window"] == "ipRGC+|ipRGC-":
-        left_rgb  = np.array(config.lightData["ipRGC"][iProj])   / 255
-        right_rgb = np.array(config.lightData["control"][iProj]) / 255
+        left_rgb  = np.array(config.lightData["ipRGC"]["left"][iProj])   / 255
+        right_rgb = np.array(config.lightData["control"]["right"][iProj]) / 255
     else:
-        left_rgb  = np.array(config.lightData["control"][iProj]) / 255
-        right_rgb = np.array(config.lightData["ipRGC"][iProj])   / 255
+        left_rgb  = np.array(config.lightData["control"]["left"][iProj]) / 255
+        right_rgb = np.array(config.lightData["ipRGC"]["right"][iProj])   / 255
 
-    print(left_rgb)
-    print(right_rgb)
-    
     mid = w // 2
     tmp[:,:mid,:] = left_rgb
     tmp[:,mid:,:] = right_rgb
@@ -381,11 +378,19 @@ def main():
     
     # %% main expriment
     
+    # with open(glob.glob(f"results/test/0_stimTest/config*.json")[0], "r") as f:
     with open(glob.glob(f"results/{args.subject}/0_stimTest/config*.json")[0], "r") as f:
         params = json.load(f)
     
-    config.lightData["control"] = config.lightData["control"][params["selectedLight"]]
-    
+    for mm in ["left","right"]:
+        with open(glob.glob(f"source/{mm}*Light{params['selectedLight']-1:02}*")[0], "r") as f:
+            tmp_lightData = json.load(f)
+            config.lightData["control"][mm]={
+                config.SCREEN_NUM_BLUE:tmp_lightData[str(config.SCREEN_NUM_BLUE)],
+                config.SCREEN_NUM_YELLOW:tmp_lightData[str(config.SCREEN_NUM_YELLOW)],
+            }
+            
+    # config.lightData["control"] = config.lightData["control"][params["selectedLight"]]
     
     behavior_res=[]
     for iTrial in np.arange(len(condition_frame)):
